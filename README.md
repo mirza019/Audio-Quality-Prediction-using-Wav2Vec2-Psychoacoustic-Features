@@ -1,219 +1,155 @@
-# Audio Quality Prediction using Wav2Vec2 and Psychoacoustic Features (On-Going)
-### A Multi-Task Deep Learning Approach for Perceptual Audio Quality Assessment
+# 🎧 Audio Quality Classification (Synthetic Dataset)
 
-This repository implements a research-grade audio quality prediction system using **transformer-based embeddings (Wav2Vec2)** and **psychoacoustic audio features**.  
-The system predicts:
+This project explores a simple and interpretable approach to **classifying audio quality** using:
 
-1. **Audio quality class** — *low*, *medium*, *high*  
-2. **Continuous perceptual quality score** — *pseudo-PESQ (1.0–4.5)*  
+- **Synthetic audio signals**
+- **Psychoacoustic features (MFCC + spectral descriptors)**
+- **RandomForest classifier**
 
-All audio data is **synthetically generated**, so no external dataset is required.
+The goal is to predict whether an audio sample is:
 
----
+- **High quality**
+- **Medium quality**
+- **Low quality**
 
-## Table of Contents
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Dataset Construction](#dataset-construction)
-- [Audio Degradations](#audio-degradations)
-- [Feature Extraction](#feature-extraction)
-- [Model](#model)
-- [Training](#training)
-- [Results](#results)
-- [Visualizations](#visualizations)
-- [How to Run](#how-to-run)
-- [References](#references)
+This project is **only for exploring the idea**, not for real-world or production audio evaluation.
 
 ---
 
-## Overview
+## 🔍 Project Overview
 
-This project explores **perceptual audio quality modeling** using a combination of:
+The pipeline includes:
 
-- Self-supervised speech representations from **Wav2Vec2**
-- Classical **psychoacoustic features**
-- A **multi-task neural network** that jointly predicts:
-  - A *categorical* audio quality label
-  - A *regression*-based perceptual score
+1. **Generate synthetic clean tones**  
+   (vibrato, tremolo, harmonics, noise floor)
 
-The methodology is inspired by research from:
+2. **Apply controlled degradations**  
+   - Noise  
+   - Clipping  
+   - Lowpass filtering  
+   - Reverb  
+   - Compression  
 
-- Dolby Laboratories  
-- Fraunhofer IIS  
-- NeuralPESQ (ICASSP 2021)  
-- MOSNet (Interspeech 2019)  
-- SSL-MOS Benchmark 2022  
+3. **Extract psychoacoustic features**  
+   MFCC mean, ZCR, RMS, spectral centroid/bandwidth/rolloff/flatness
 
----
+4. **Train a RandomForest classifier**
 
-## Key Features
-
-- 100% synthetic dataset (no downloads needed)
-- Realistic clean signal generation (FM, AM, harmonics)
-- Five degradation types across three severity levels
-- Balanced dataset design
-- Pseudo-PESQ score generation
-- Wav2Vec2 transformer-based embeddings (768-dim)
-- Psychoacoustic feature extraction (19-dim)
-- Feature fusion and standardization
-- Multi-task neural network (classification + regression)
-- Full visualization suite (spectrograms, confusion matrix, scatter, etc.)
-- Fully reproducible in Google Colab
+5. **Evaluate model accuracy + diagnostic plots**
 
 ---
 
-## Architecture
+## 📊 Results
 
-                Raw Audio (Clean or Degraded)
-                              │
-            ┌─────────────────┴──────────────────┐
-            │                                    │
-     Wav2Vec2 Encoder                    Psychoacoustic Features
-      (768-dim SSL)                           (19-dim)
-            │                                    │
-            └──────────────┬─────────────────────┘
-                           ▼
-                Concatenated Feature Vector
-                         (787-dim)
-                           │
-                   Shared MLP Encoder
-                           │
-          ┌────────────────┴────────────────┐
-          │                                 │
-  Classification Head                Regression Head
- (low/medium/high)                  (1.0 to 4.5 score)
+The model achieves:
 
+- **Training Accuracy:** 1.00  
+- **Test Accuracy:** ~**99%**  
 
----
+This result is **expected**, and **not caused by overfitting**.
 
-## Dataset Construction
+### ✅ Why this high accuracy is real (not overfitting)
 
-Each clean audio sample is synthesized using:
+The dataset is:
 
-- Frequency modulation (vibrato)
-- Amplitude modulation (tremolo)
-- Multiple harmonics
-- Light natural noise floor
+- **Synthetic**
+- **Perfectly balanced**
+- **Fully controlled**
+- **Has clear, strong degradations**
+- **Uses powerful spectral features**
 
-Then the following degradations are applied:
+Distortions like clipping, lowpass, reverb, noise, and compression leave **distinct spectral fingerprints** that MFCC and spectral features capture extremely well.
 
-- **noise**
-- **clip**
-- **lowpass**
-- **reverb**
-- **compression**
+Because the classes are **inherently separable**, a high accuracy is expected and correct.
 
-Each with severity levels **1, 2, 3**.
+### 📌 Additional metrics that confirm no overfitting
 
-### Dataset size
+The following metrics confirm that the classifier generalizes well:
 
+#### **1. Train vs Test Accuracy**
+Train Accuracy: 100%
+Test Accuracy: 99%
 
-Dataset is **balanced** to avoid model bias.
-5 degradation types × 3 severities × N samples per combination
-= 300 total samples (default)
----
+→ If overfitting were happening, the test accuracy would drop significantly.
 
-## Audio Degradations
+#### **2. Confusion Matrix**
+A near-perfect diagonal matrix indicates clean separation of classes.
 
-| Degradation | Description                               |
-|-------------|-------------------------------------------|
-| noise       | Additive white noise                      |
-| clip        | Hard amplitude clipping                   |
-| lowpass     | High-frequency suppression                |
-| reverb      | Echo / temporal smearing                  |
-| compression | Time-stretch based artifact simulation    |
+#### **3. Classification Report**
+Balanced F1-scores across all classes show stable, non-biased performance.
 
-Severity:
-- 1 → High Quality  
-- 2 → Medium  
-- 3 → Low  
+#### **4. No class collapse**
+Models that overfit often predict mostly one class.  
+Here, all three classes (low/medium/high) are predicted correctly.
+
+### 📌 Why synthetic datasets behave this way
+
+Synthetic distortions are:
+
+- deterministic  
+- consistent  
+- clean  
+- not affected by recording conditions  
+- not influenced by human vocal variability  
+
+This makes the machine learning task **much easier** than real-world audio quality prediction.
 
 ---
 
----
+## ⚠️ Important Disclaimer
 
-## Model
+This project is **not** intended for real-world audio quality assessment.
 
-A **multi-task neural network**:
+Real-life audio would require:
 
-- **Shared encoder**  
-  - Linear(787 → 512)  
-  - Linear(512 → 256)  
-  - Dropout  
+- large datasets  
+- speech/music content  
+- real codec artifacts  
+- room acoustics  
+- human subjective ratings (MOS/PESQ)  
+- more advanced models like Wav2Vec2 or MOSNet  
 
-- **Heads**  
-  - Classification (3 classes)  
-  - Regression (1 value, pseudo-PESQ)
-
-### Loss Function
-Total Loss = CE(Classification) + λ * MSE(Regression)
-
-λ = 0.5
+This project is a **concept exploration**, not a production-quality tool.
 
 ---
 
-## Training
+## ❓ Q&A: Understanding High Accuracy and Limitations
 
-- Framework: PyTorch  
-- Optimizer: Adam  
-- LR: 1e-4  
-- Epochs: 40  
-- Train/Test Split: 80/20  
-- Stratified class sampling  
-- StandardScaler for all features  
+### **Q1: Why does the model reach ~99% accuracy?**
+Because the dataset is fully synthetic and distortions are easy to distinguish using spectral features.
 
----
+### **Q2: Is this overfitting?**
+No. Both training and testing accuracies are high, and the confusion matrix + F1 scores confirm clean generalization.
 
-## Results
+### **Q3: Would this model perform well on real speech or music?**
+No. Real audio is much more complex.  
+Accuracy would drop significantly without:
 
-### Classification  
-Quality labels: *low, medium, high*
+- large datasets  
+- perceptual MOS labels  
+- advanced deep learning models
 
-Example (your exact numbers will differ):
-
-Accuracy: XX%
-Low: Precision XX | Recall XX
-Medium: Precision XX | Recall XX
-High: Precision XX | Recall XX
-
-
-### Regression (Pseudo-PESQ)
-MAE: 0.xx
-MSE: 0.xx
-RMSE: 0.xx
-
-
-Regression scatter plot shows a visible correlation between predicted and actual quality scores.
+### **Q4: Why is this project still useful?**
+It helps you:
+- understand audio feature extraction  
+- see the effect of degradations  
+- build a complete ML audio pipeline  
+- explore ideas before scaling up  
+- prepare for real audio research tasks  
 
 ---
 
-## Visualizations
+## 📂 Files
 
-The notebook provides:
-
-- Waveform plots
-- STFT spectrograms
-- Mel spectrograms
-- Clean vs degraded comparisons
-- All degradation types grid
-- Training loss curves
-- Confusion matrix
-- Predicted vs true score scatter plot
-
-
+- `audio_quality_project.ipynb` — Main notebook  
+- `confusion_matrix.png` — Example output  
+- `README.md` — Project documentation  
 
 ---
 
-## References
+## 🛠 Requirements
 
-- Maiti & Kim, *Speech Quality Assessment Using Self-Supervised Features*, Interspeech 2021  
-- Lo et al., *MOSNet*, Interspeech 2019  
-- Avila et al., *NeuralPESQ*, ICASSP 2021  
-- Hsu et al., *HuBERT*, 2021  
-- ITU-T P.862 (PESQ), P.863 (POLQA)  
+Install:
 
----
-
-Open an issue if you want enhancements or extensions.
-
+```bash
+pip install numpy librosa scikit-learn matplotlib soundfile
