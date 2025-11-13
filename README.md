@@ -1,4 +1,4 @@
-# Audio Quality Prediction using Wav2Vec2 and Psychoacoustic Features
+# Audio Quality Prediction using Wav2Vec2 and Psychoacoustic Features (On-Going)
 ### A Multi-Task Deep Learning Approach for Perceptual Audio Quality Assessment
 
 This repository implements a research-grade audio quality prediction system using **transformer-based embeddings (Wav2Vec2)** and **psychoacoustic audio features**.  
